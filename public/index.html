@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knight Bot Panel</title>
+  <style>
+    :root{
+      --bg:#0a0b10; --bg2:#11131c; --card:#151823; --card2:#1b1f2c;
+      --border:#272c3a; --text:#e7eaf3; --muted:#8b93a7;
+      --accent:#6c5ce7; --accent2:#a29bfe; --green:#2ecc71; --red:#ff5f6d; --amber:#f1c40f; --blue:#4aa3ff;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:radial-gradient(1200px 600px at 80% -10%, #1c1733 0%, transparent 60%), var(--bg);
+      color:var(--text);min-height:100vh;line-height:1.5;
+    }
+    .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 80px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:24px;font-weight:800;color:#fff;box-shadow:0 8px 24px rgba(108,92,231,.35)}
+    .brand h1{font-size:20px;font-weight:700;letter-spacing:.2px}
+    .brand p{font-size:13px;color:var(--muted)}
+    .status-pill{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);padding:8px 14px;border-radius:999px;font-size:13px}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+    .dot.online{background:var(--green);box-shadow:0 0 0 3px rgba(46,204,113,.18)}
+    .dot.starting{background:var(--amber);box-shadow:0 0 0 3px rgba(241,196,15,.18);animation:pulse 1.2s infinite}
+    .dot.offline{background:var(--red);box-shadow:0 0 0 3px rgba(255,95,109,.18)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:16px;padding:20px}
+    .card h2{font-size:15px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+    .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+    label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+    textarea,input[type=text],input[type=password]{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:13.5px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s}
+    textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,92,231,.18)}
+    textarea{min-height:120px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+    .hint{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.55}
+
+    button{cursor:pointer;border:0;border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:600;color:#fff;background:var(--accent);transition:transform .08s,opacity .15s,filter .15s;display:inline-flex;align-items:center;gap:8px}
+    button:hover{filter:brightness(1.08)}
+    button:active{transform:translateY(1px)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    button.secondary{background:var(--card2);border:1px solid var(--border);color:var(--text)}
+    button.danger{background:var(--red)}
+    button.success{background:var(--green)}
+    button.warn{background:var(--amber);color:#3a2a00}
+    button.outline{background:transparent;border:1px solid var(--accent);color:var(--accent2)}
+    button.big{padding:13px 18px;font-size:14.5px}
+
+    .terminal{background:#07080d;border:1px solid var(--border);border-radius:12px;height:340px;overflow-y:auto;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.6;color:#c7cdda}
+    .terminal .line{white-space:pre-wrap;word-break:break-word}
+    .terminal .t-info{color:var(--blue)}
+    .terminal .t-ok{color:var(--green)}
+    .terminal .t-err{color:var(--red)}
+    .terminal .t-warn{color:var(--amber)}
+    .terminal .t-time{color:#5b6478;margin-right:8px}
+    .terminal::-webkit-scrollbar{width:8px}
+    .terminal::-webkit-scrollbar-thumb{background:#2a2f3d;border-radius:8px}
+
+    .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+    .meta b{color:var(--text);font-weight:600}
+    .stat{display:flex;flex-direction:column;gap:2px}
+    .stat span:first-child{font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+    .stat span:last-child{font-size:14px;color:var(--text);font-weight:600}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);padding:12px 18px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast.ok{border-color:var(--green)}
+    .toast.err{border-color:var(--red)}
+
+    .linkbtn{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px dashed var(--border);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--text);margin-top:6px;transition:border-color .15s,background .15s}
+    .linkbtn:hover{border-color:var(--accent);background:#191c2a}
+    .linkbtn .ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ff4d4d,#ff8a3d);display:grid;place-items:center;font-weight:800;color:#fff}
+    .linkbtn small{color:var(--muted);display:block;margin-top:2px}
+    .linkbtn .arr{color:var(--muted);font-size:18px}
+
+    .tag{display:inline-block;background:rgba(108,92,231,.15);color:var(--accent2);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px;letter-spacing:.4px}
+    .hidden{display:none!important}
+    .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px}
+    footer a{color:var(--accent2);text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">K</div>
+        <div>
+          <h1>Knight Bot Panel <span class="tag">v3.0.8</span></h1>
+          <p>WhatsApp Multi-Device bot control panel</p>
+        </div>
+      </div>
+      <div class="status-pill">
+        <span id="dot" class="dot offline"></span>
+        <span id="state">Checking…</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Session -->
+      <section class="card">
+        <h2>① Session <span style="color:var(--muted);font-weight:400;font-size:12px">(pairing already gotten)</span></h2>
+        <div class="sub">Paste the <b>creds.json</b> you got from the pair-code generator. The panel writes it to <code>./session/creds.json</code> and starts the bot.</div>
+        <label for="session">creds.json contents</label>
+        <textarea id="session" placeholder='Paste the full creds.json here, e.g.&#10;{ "noiseKey": "...", "signalIdentities": ..., "registered": true, ... }'></textarea>
+        <div class="row">
+          <button class="success big" id="btnStart">▶ Start Bot</button>
+          <button class="danger big" id="btnStop" disabled>■ Stop</button>
+          <button class="outline big" id="btnRestart" disabled>↻ Restart</button>
+        </div>
+        <p class="hint">The bot auto-restarts if the process crashes (max 5 retries). Logs stream live below.</p>
+      </section>
+
+      <!-- Get session -->
+      <section class="card">
+        <h2>② Get your session</h2>
+        <div class="sub">Don't have a <code>creds.json</code> yet? Generate a pair code, link WhatsApp, then paste the session back here.</div>
+        <a class="linkbtn" href="https://knight-bot-paircode.onrender.com" target="_blank" rel="noopener">
+          <span class="ic">P</span>
+          <div style="flex:1">
+            <b>Open Pair-Code Generator</b>
+            <small>knight-bot-paircode.onrender.com — enter your number → link WhatsApp → copy creds.json</small>
+          </div>
+          <span class="arr">↗</span>
+        </a>
+        <div class="row" style="margin-top:16px">
+          <button class="secondary big" id="btnCheck">⟳ Refresh status</button>
+          <button class="secondary big" id="btnClear" style="margin-left:auto">Clear session</button>
+        </div>
+        <div class="meta" style="margin-top:16px">
+          <div class="stat"><span>Uptime</span><span id="uptime">—</span></div>
+          <div class="stat"><span>Restarts</span><span id="restarts">0</span></div>
+          <div class="stat"><span>Bot PID</span><span id="pid">—</span></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Logs -->
+    <section class="card" style="margin-top:18px">
+      <h2>③ Live logs <span style="color:var(--muted);font-weight:400;font-size:12px">(tail — follows the bot process)</span></h2>
+      <div class="sub">Everything the bot prints to stdout/stderr shows up here in real time.</div>
+      <div class="terminal" id="term"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="secondary" id="btnScroll">↓ Autoscroll: ON</button>
+        <button class="secondary" id="btnClearLog" style="margin-left:auto">Clear logs</button>
+        <button class="secondary" id="btnDownload">⬇ Download log</button>
+      </div>
+    </section>
+
+    <!-- Update -->
+    <section class="card" style="margin-top:18px">
+      <h2>④ Update from GitHub <span class="tag" style="background:rgba(74,163,255,.15);color:var(--blue)">sync</span></h2>
+      <div class="sub">Pulls the latest commit from your GitHub repo into the running deploy. Stopping the bot first is safer; the panel does it automatically.</div>
+      <div class="row">
+        <button class="warn big" id="btnUpdate">⤓ Update now</button>
+        <button class="secondary big" id="btnRestart2" disabled>↻ Restart bot after update</button>
+        <span class="hint" style="margin-left:auto" id="updateInfo">Repo: — / HEAD: —</span>
+      </div>
+      <p class="hint">Tip: the <b>Update</b> button runs <code>git fetch &amp;&amp; git reset --hard origin/main</code> on the deploy, then re-installs deps. Your session and runtime data are preserved.</p>
+    </section>
+
+    <footer>Knight Bot Panel · built for Railway · bot © Professor (Knightbot-MD, MIT)</footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const PAIR_LINK = "https://knight-bot-paircode.onrender.com";
+const $ = (id)=>document.getElementById(id);
+const term = $("term");
+let autoscroll = true;
+let stomp = null;
+
+function toast(msg, kind=""){
+  const t=$("toast"); t.textContent=msg; t.className="toast show "+kind;
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.className="toast "+kind, 2600);
+}
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function now(){const d=new Date();return d.toTimeString().slice(0,8)}
+function clsFor(line){
+  if(/error|err|fail|cannot|undefined|throw/i.test(line)) return "t-err";
+  if(/warn|conflict|reconnect/i.test(line)) return "t-warn";
+  if(/open|connected|ready|success|ok\b/i.test(line)) return "t-ok";
+  if(/info|start|spawn|listening/i.test(line)) return "t-info";
+  return "";
+}
+function addLine(text){
+  const div=document.createElement("div");
+  div.className="line";
+  div.innerHTML = `<span class="t-time">${now()}</span><span class="${clsFor(text)}">${esc(text)}</span>`;
+  term.appendChild(div);
+  while(term.children.length>500) term.removeChild(term.firstChild);
+  if(autoscroll) term.scrollTop=term.scrollHeight;
+}
+function setBtnState(state){
+  // state: online | starting | offline
+  $("dot").className = "dot "+state;
+  const map={online:["Stop","Restart"], starting:["Stop","Restart"], offline:["Start","Restart"]};
+  $("btnStart").disabled = state==="online"||state==="starting";
+  $("btnStop").disabled  = state==="offline";
+  $("btnRestart").disabled = state==="offline";
+  $("btnRestart2").disabled = state==="offline";
+  $("state").textContent = {online:"Online",starting:"Starting…",offline:"Offline"}[state];
+}
+
+// ---- WebSocket log stream ----
+function connectWS(){
+  const proto = location.protocol==="https:"?"wss":"ws";
+  stomp = new WebSocket(`${proto}://${location.host}/ws`);
+  stomp.onopen = ()=>{};
+  stomp.onmessage = (ev)=>{
+    try{ const m=JSON.parse(ev.data); handleMsg(m); }catch(e){ addLine(ev.data); }
+  };
+  stomp.onclose = ()=>{ setTimeout(connectWS, 2500); };
+  stomp.onerror = ()=>{ try{stomp.close()}catch(e){} };
+}
+function handleMsg(m){
+  if(m.type==="log"){ addLine(m.line); }
+  else if(m.type==="state"){
+    setBtnState(m.state);
+    $("uptime").textContent = m.uptime||"—";
+    $("restarts").textContent = m.restarts||0;
+    $("pid").textContent = m.pid||"—";
+  }
+  else if(m.type==="update"){
+    if(m.done){ toast(m.ok?"Update finished ✓":"Update failed ✗", m.ok?"ok":"err"); $("btnUpdate").disabled=false; $("btnUpdate").innerHTML="⤓ Update now"; }
+    else { $("btnUpdate").innerHTML='<span class="spinner"></span> Updating…'; $("btnUpdate").disabled=true; }
+    if(m.info) $("updateInfo").textContent = m.info;
+  }
+}
+
+// ---- HTTP calls ----
+async function api(path, opts={}){
+  const r = await fetch(path, {headers:{'Content-Type':'application/json'}, ...opts});
+  const t = await r.text();
+  let j; try{j=JSON.parse(t)}catch(e){j={ok:false, error:t}}
+  if(!r.ok && !j.error) j.error = "HTTP "+r.status;
+  return j;
+}
+
+async function startBot(){
+  const sess = $("session").value.trim();
+  if(!sess){ toast("Paste your creds.json first", "err"); return; }
+  let parsed;
+  try{ parsed = JSON.parse(sess); }
+  catch(e){ toast("That's not valid JSON — paste the whole creds.json", "err"); return; }
+  if(!parsed || typeof parsed!=="object" || Array.isArray(parsed)){ toast("creds.json must be an object", "err"); return; }
+  if(!parsed.noiseKey && !parsed.registered && !parsed.me && Object.keys(parsed).length<3){
+    toast("creds.json looks empty — get a real one from the pair-code link", "err"); return;
+  }
+  $("btnStart").innerHTML='<span class="spinner"></span> Starting…'; $("btnStart").disabled=true;
+  const j = await api("/api/start", {method:"POST", body:JSON.stringify({session:sess})});
+  $("btnStart").innerHTML="▶ Start Bot";
+  toast(j.ok?"Bot starting…":(j.error||"Failed"), j.ok?"ok":"err");
+}
+async function stopBot(){
+  $("btnStop").disabled=true;
+  const j = await api("/api/stop", {method:"POST"});
+  toast(j.ok?"Stopping…":(j.error||"Failed"), j.ok?"ok":"err");
+}
+async function restartBot(){
+  $("btnRestart").disabled=true; $("btnRestart2").disabled=true;
+  const j = await api("/api/restart", {method:"POST"});
+  toast(j.ok?"Restarting…":(j.error||"Failed"), j.ok?"ok":"err");
+}
+async function updateRepo(){
+  if(!confirm("This runs `git reset --hard origin/main` on the deploy and reinstalls deps. Continue?")) return;
+  $("btnUpdate").innerHTML='<span class="spinner"></span> Updating…'; $("btnUpdate").disabled=true;
+  const j = await api("/api/update", {method:"POST"});
+  if(!j.ok){ toast(j.error||"Update failed","err"); $("btnUpdate").innerHTML="⤓ Update now"; $("btnUpdate").disabled=false; }
+  // ws will report progress; final toast fires on m.done
+}
+async function clearSession(){
+  if(!confirm("Delete ./session and reset? The bot will need a fresh creds.json to start.")) return;
+  const j = await api("/api/clear", {method:"POST"});
+  toast(j.ok?"Session cleared":(j.error||"Failed"), j.ok?"ok":"err");
+  if(j.ok) $("session").value="";
+}
+async function checkStatus(){ await api("/api/status", {method:"POST"}); }
+async function loadMeta(){
+  const j = await api("/api/meta");
+  if(j.ok){ $("updateInfo").textContent = `Repo: ${j.repo||"—"} / HEAD: ${(j.head||"—").slice(0,7)}`; }
+}
+
+// ---- wire up ----
+$("btnStart").onclick = startBot;
+$("btnStop").onclick  = stopBot;
+$("btnRestart").onclick = restartBot;
+$("btnRestart2").onclick = restartBot;
+$("btnUpdate").onclick = updateRepo;
+$("btnClear").onclick = clearSession;
+$("btnCheck").onclick = checkStatus;
+$("btnClearLog").onclick = ()=>{ term.innerHTML=""; };
+$("btnScroll").onclick = (e)=>{
+  autoscroll = !autoscroll;
+  e.target.textContent = "↓ Autoscroll: "+(autoscroll?"ON":"OFF");
+  if(autoscroll) term.scrollTop = term.scrollHeight;
+};
+$("btnDownload").onclick = ()=>{
+  const blob = new Blob([term.innerText], {type:"text/plain"});
+  const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download = "knightbot-logs.txt"; a.click();
+};
+term.addEventListener("wheel", ()=>{ if(term.scrollTop + term.clientHeight < term.scrollHeight - 40) autoscroll=false; else autoscroll=true; });
+
+connectWS();
+checkStatus();
+loadMeta();
+addLine("Panel ready. Paste your creds.json and press Start Bot.");
+</script>
+</body>
+</html>
